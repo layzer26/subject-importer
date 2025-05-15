@@ -4,6 +4,7 @@ target/
 
 # CSV data files
 src/main/resources/data/*.csv
+F4UniqueSubjects2025/raw data/*.csv
 
 # IDE files
 .vscode/
