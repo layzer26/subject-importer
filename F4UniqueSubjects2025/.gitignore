@@ -6,14 +6,22 @@ target/
 .vscode/
 .idea/
 *.iml
+.settings/
+.project
+.classpath
 
 # Data files
 src/main/resources/data/*.csv
 src/main/resources/data/*.xlsx
+!src/main/resources/data/sample/*.csv
 
 # Database files
 *.sql
 *.db
 
 # Configuration files
-application.properties
+src/main/resources/application.properties
+
+# Logs
+logs/
+*.log
