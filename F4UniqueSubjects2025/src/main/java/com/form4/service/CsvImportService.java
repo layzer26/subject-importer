@@ -1,11 +1,11 @@
 package com.form4.service;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Scanner;
 
 import com.form4.util.DatabaseConnection;
 
@@ -13,6 +13,8 @@ public class CsvImportService {
 
     private final String csvFile;
     private final DatabaseConnection dbConnection;
+    private int totalStudents = 0;
+    private int totalChoices = 0;
 
     public CsvImportService(String csvFile, DatabaseConnection dbConnection) {
         this.csvFile = csvFile;
@@ -20,47 +22,80 @@ public class CsvImportService {
     }
 
     public void importData() throws SQLException, IOException {
-        try (Connection conn = dbConnection.getConnection(); 
-             BufferedReader reader = new BufferedReader(new FileReader(csvFile))) {
-
+        try (Connection conn = dbConnection.getConnection();
+             Scanner scanner = new Scanner(new File(csvFile))) {
+            
             conn.setAutoCommit(false);
             PreparedStatement insertChoice = conn.prepareStatement(
                     "INSERT INTO subject_choices (student_name, student_id, subject_name, subject_code, choice_number) VALUES (?, ?, ?, ?, ?)");
 
             // Skip header line
-            reader.readLine();
+            if (scanner.hasNextLine()) {
+                scanner.nextLine();
+            }
             
-            String line;
             int studentCounter = 1;
-            while ((line = reader.readLine()) != null) {
-                String[] data = line.split(",", -1);
-                if (data.length < 3) { // Need at least name, form, and one subject
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) {
                     continue;
                 }
 
-                String studentName = data[0].trim();
-                String formClass = data[1].trim(); // This will be part of student_id
-                
-                // For each subject (starting from index 3)
-                for (int i = 3; i < data.length; i++) {
-                    String subject = data[i].trim();
-                    if (!subject.isEmpty()) {
-                        // Create simple numeric student ID
-                        String studentId = "S" + String.format("%03d", studentCounter);
-                        
-                        insertChoice.setString(1, studentName);
-                        insertChoice.setString(2, studentId);
-                        insertChoice.setString(3, subject); // Subject name
-                        insertChoice.setString(4, subject); // Using same value for code (can be updated later)
-                        insertChoice.setInt(5, i - 2); // Choice number (3rd column is choice 1)
-                        insertChoice.executeUpdate();
+                // Use Scanner to parse each line
+                try (Scanner lineScanner = new Scanner(line).useDelimiter(",")) {
+                    if (!lineScanner.hasNext()) {
+                        continue;
                     }
+
+                    String studentName = lineScanner.next().trim();
+                    String formClass = lineScanner.next().trim();
+
+                    // Skip the third column (usually contains a number)
+                    if (lineScanner.hasNext()) {
+                        lineScanner.next();
+                    }
+
+                    // Process subject choices
+                    int choiceNumber = 1;
+                    while (lineScanner.hasNext()) {
+                        String subject = lineScanner.next().trim();
+                        if (!subject.isEmpty()) {
+                            String studentId = "S" + String.format("%03d", studentCounter);
+                            
+                            insertChoice.setString(1, studentName);
+                            insertChoice.setString(2, studentId);
+                            insertChoice.setString(3, subject);
+                            insertChoice.setString(4, subject);
+                            insertChoice.setInt(5, choiceNumber);
+                            insertChoice.executeUpdate();
+                            
+                            totalChoices++;
+                        }
+                        choiceNumber++;
+                    }
+                    totalStudents++;
                 }
                 studentCounter++;
             }
 
             conn.commit();
-            System.out.println("Data imported successfully.");
+            System.out.printf("Import completed successfully. Processed %d students with %d subject choices.%n", 
+                            totalStudents, totalChoices);
         }
     }
+
+    public int getTotalStudents() {
+        return totalStudents;
+    }
+
+    public int getTotalChoices() {
+        return totalChoices;
+    }
 }
+// TODO: Validate that subject names are from an approved list (optional whitelist check)
+// TODO: Insert subject names into a `subjects` table if not already present (normalize schema)
+// TODO: Replace placeholder subject code with actual code mapping logic (e.g., "Mat" → "MAT001")
+// TODO: Check for and prevent duplicate student entries (based on name + form)
+// TODO: Add input validation for subject choices (e.g., maximum number of choices)
+// TODO: Add progress reporting for large files
+// TODO: Consider using CSV parsing library for more robust handling
