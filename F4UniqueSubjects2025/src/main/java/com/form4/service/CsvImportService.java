@@ -20,33 +20,47 @@ public class CsvImportService {
     }
 
     public void importData() throws SQLException, IOException {
-        try (Connection conn = dbConnection.getConnection(); BufferedReader reader = new BufferedReader(new FileReader(csvFile))) {
+        try (Connection conn = dbConnection.getConnection(); 
+             BufferedReader reader = new BufferedReader(new FileReader(csvFile))) {
 
             conn.setAutoCommit(false);
-            PreparedStatement insertStudent = conn.prepareStatement(
-                    "INSERT INTO students (student_name, form) VALUES (?, ?)");
+            PreparedStatement insertChoice = conn.prepareStatement(
+                    "INSERT INTO subject_choices (student_name, student_id, subject_name, subject_code, choice_number) VALUES (?, ?, ?, ?, ?)");
 
-            reader.readLine(); // Skip header
+            // Skip header line
+            reader.readLine();
+            
             String line;
+            int studentCounter = 1;
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(",", -1);
-                if (data.length < 2) {
+                if (data.length < 3) { // Need at least name, form, and one subject
                     continue;
                 }
 
-                String name = data[0].trim();
-                String formText = data[1].trim();
-
-                if (name.isEmpty() || formText.isEmpty()) {
-                    continue;
+                String studentName = data[0].trim();
+                String formClass = data[1].trim(); // This will be part of student_id
+                
+                // For each subject (starting from index 3)
+                for (int i = 3; i < data.length; i++) {
+                    String subject = data[i].trim();
+                    if (!subject.isEmpty()) {
+                        // Create simple numeric student ID
+                        String studentId = "S" + String.format("%03d", studentCounter);
+                        
+                        insertChoice.setString(1, studentName);
+                        insertChoice.setString(2, studentId);
+                        insertChoice.setString(3, subject); // Subject name
+                        insertChoice.setString(4, subject); // Using same value for code (can be updated later)
+                        insertChoice.setInt(5, i - 2); // Choice number (3rd column is choice 1)
+                        insertChoice.executeUpdate();
+                    }
                 }
-
-                insertStudent.setString(1, name);
-                insertStudent.setInt(2, Integer.parseInt(formText));
-                insertStudent.executeUpdate();
+                studentCounter++;
             }
 
             conn.commit();
+            System.out.println("Data imported successfully.");
         }
     }
 }

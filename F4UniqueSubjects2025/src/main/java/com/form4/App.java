@@ -1,5 +1,7 @@
-:\Users\Layze\Documents\GitHub\StAlbanDataProjects\F4UniqueSubjects2025\src\main\java\com\form4\App.java
 package com.form4;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 import com.form4.service.CsvImportService;
 import com.form4.util.DatabaseConnection;
@@ -16,7 +18,7 @@ public class App {
             CsvImportService importService = new CsvImportService(csvFile, dbConnection);
             importService.importData();
             System.out.println("Data imported successfully.");
-        } catch (Exception e) {
+        } catch (SQLException | IOException e) {
             System.err.println("Error importing data: " + e.getMessage());
         }
     }
