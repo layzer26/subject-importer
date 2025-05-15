@@ -1,0 +1,17 @@
+# Compiled files
+target/
+*.class
+
+# CSV data files
+src/main/resources/data/*.csv
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# Database files
+*.sql
+
+# Sensitive information
+application.properties

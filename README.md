@@ -25,4 +25,22 @@
     Accounting                  |   ACC
     Business Studies            |   BUS
 
-
+## Folder Structure 
+    F4UniqueSubjects2025/
+    ├── .gitignore
+    ├── README.md
+    ├── pom.xml
+    ├── src/
+    │   ├── main/
+    │   │   ├── java/
+    │   │   │   └── com/
+    │   │   │       └── form4/
+    │   │   │           └── App.java
+    │   │   └── resources/
+    │   │       └── data/
+    │   │           └── F4_subject_choices.csv
+    │   └── test/
+    │       └── java/
+    │           └── com/
+    │               └── form4/
+    └── target/
